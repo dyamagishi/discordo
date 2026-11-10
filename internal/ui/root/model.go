@@ -1,9 +1,11 @@
 package root
 
 import (
-	"github.com/ayn2op/tview/layout"
 	"os"
 
+	"github.com/ayn2op/tview/layout"
+
+	"github.com/ayn2op/discordo/internal/auth"
 	"github.com/ayn2op/discordo/internal/config"
 	"github.com/ayn2op/discordo/internal/consts"
 	"github.com/ayn2op/discordo/internal/ui"
@@ -24,8 +26,6 @@ import (
 	"github.com/ayn2op/tview/stack"
 	"github.com/gdamore/tcell/v3"
 )
-
-const tokenEnvVarKey = "DISCORDO_TOKEN"
 
 // screen is what is shown above help.
 type screen int
@@ -122,7 +122,7 @@ var _ tview.Model[Model] = Model{}
 
 func (m Model) Init() tview.Cmd {
 	var command tview.Cmd
-	if token := os.Getenv(tokenEnvVarKey); token != "" {
+	if token := os.Getenv(auth.EnvVar); token != "" {
 		command = useToken(token)
 	} else {
 		command = getToken()

@@ -3,15 +3,9 @@ package root
 import (
 	"log/slog"
 
-	"github.com/ayn2op/discordo/internal/consts"
+	"github.com/ayn2op/discordo/internal/auth"
 	"github.com/ayn2op/tview"
 	"github.com/ayn2op/tview/cmd"
-	"github.com/zalando/go-keyring"
-)
-
-const (
-	keyringService = consts.Name
-	keyringUser    = "token"
 )
 
 type tokenMsg string
@@ -26,9 +20,9 @@ type loginMsg struct{}
 
 func getToken() tview.Cmd {
 	return cmd.Task(func() tview.Msg {
-		token, err := keyring.Get(keyringService, keyringUser)
+		token, err := auth.Token()
 		if err != nil {
-			slog.Info("failed to retrieve token from keyring", "err", err)
+			slog.Info("failed to retrieve token", "err", err)
 			return loginMsg{}
 		}
 		return tokenMsg(token)
@@ -37,7 +31,7 @@ func getToken() tview.Cmd {
 
 func setToken(token string) tview.Cmd {
 	return cmd.Task(func() tview.Msg {
-		if err := keyring.Set(keyringService, keyringUser, token); err != nil {
+		if err := auth.SetToken(token); err != nil {
 			slog.Error("failed to set token to keyring", "err", err)
 		}
 		return nil
@@ -46,7 +40,7 @@ func setToken(token string) tview.Cmd {
 
 func deleteToken() tview.Cmd {
 	return cmd.Task(func() tview.Msg {
-		if err := keyring.Delete(keyringService, keyringUser); err != nil {
+		if err := auth.DeleteToken(); err != nil {
 			slog.Error("failed to delete token from keyring", "err", err)
 		}
 		return nil

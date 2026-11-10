@@ -15,6 +15,7 @@ import (
 	"github.com/ayn2op/arikawa/v3/state/store/defaultstore"
 	"github.com/ayn2op/arikawa/v3/utils/handler"
 	"github.com/ayn2op/arikawa/v3/utils/httputil"
+	"github.com/ayn2op/discordo/internal/auth"
 	"github.com/ayn2op/discordo/internal/config"
 	"github.com/ayn2op/discordo/internal/consts"
 	clientgateway "github.com/ayn2op/discordo/internal/gateway"
@@ -113,6 +114,17 @@ func NewModel(cfg *config.Config, token string) Model {
 
 	m.events = make(chan gateway.Event)
 	m.state.AddChanHandler(m.events)
+	// Discord can rotate the user token through the gateway. Persist it so the
+	// CLI keeps working after the TUI exits.
+	m.state.AddSyncHandler(func(event gateway.Event) {
+		ready, ok := event.(*gateway.ReadyEvent)
+		if !ok || ready.AuthToken == "" {
+			return
+		}
+		if err := auth.SetToken(ready.AuthToken); err != nil {
+			slog.Error("failed to persist refreshed token", "err", err)
+		}
+	})
 	m.state.StateLog = func(err error) {
 		slog.Error("state log", "err", err)
 	}

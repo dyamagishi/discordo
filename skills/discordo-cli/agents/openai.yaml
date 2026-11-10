@@ -1,0 +1,4 @@
+interface:
+  display_name: "discordo CLI"
+  short_description: "Read Discord messages, channels and threads as JSON"
+  default_prompt: "Use $discordo-cli to read Discord guilds, channels, message history, search results, threads, members, pins and DMs as JSON from the logged-in user account."

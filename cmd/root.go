@@ -4,8 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/ayn2op/arikawa/v3/utils/ws"
+	"github.com/ayn2op/discordo/internal/cli"
 	"github.com/ayn2op/discordo/internal/config"
 	"github.com/ayn2op/discordo/internal/logger"
 	"github.com/ayn2op/discordo/internal/ui/root"
@@ -14,6 +16,12 @@ import (
 )
 
 func Run() error {
+	// Subcommands are handled without starting the TUI, so the CLI never opens
+	// a gateway connection or a terminal screen.
+	if len(os.Args) > 1 && cli.IsCommand(os.Args[1]) {
+		return cli.Run(os.Args[1:])
+	}
+
 	configPath := flag.String("config-path", config.DefaultPath(), "path of the configuration file")
 	logPath := flag.String("log-path", logger.DefaultPath(), "path of the log file")
 	logLevel := flag.String("log-level", "info", "log level")

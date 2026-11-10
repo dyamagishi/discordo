@@ -1,5 +1,11 @@
 discordo*
 
+# The agent skill for the CLI lives in this repo, even though its name starts
+# with "discordo" and would otherwise be ignored above.
+!skills/
+!skills/discordo-cli/
+!skills/discordo-cli/**
+
 .golangci*
 
 # Visual Studio Code

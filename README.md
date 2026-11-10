@@ -72,6 +72,28 @@ Set the value of the `DISCORDO_TOKEN` environment variable to the authentication
 DISCORDO_TOKEN="OTI2MDU5NTQxNDE2Nzc5ODA2.Yc2KKA.2iZ-5JxgxG-9Ub8GHzBSn-NJjNg" discordo
 ```
 
+## Command line (read-only)
+
+The same binary also works as a read-only CLI that prints JSON. It reuses the
+token stored by the TUI, uses only the REST API, and never opens a gateway
+connection.
+
+```sh
+discordo auth status
+discordo guild list
+discordo channel list <guild-id>
+discordo msg list <channel-id> -limit 50
+discordo msg get <channel-id> <message-id>
+discordo search <guild-id> -query "deploy failed"
+discordo thread active <guild-id>
+discordo member list <guild-id>
+discordo pin list <channel-id>
+discordo dm list
+```
+
+Run `discordo help` for the full list. See `skills/discordo-cli/` for the agent
+skill and command recipes.
+
 ## Configuration
 
 The configuration file allows you to configure and customize the behavior, keybindings, and theme of the application.
