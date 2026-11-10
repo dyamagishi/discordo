@@ -16,9 +16,15 @@ speaks to Discord as the logged-in user account.
 
 ## Preconditions
 
-1. Log in once through the TUI.
-- Run `discordo` and complete the login (QR login is the most reliable path,
-  since the password path does not support MFA).
+1. Log in once, either through the TUI or headlessly.
+- TUI: run `discordo` and complete the login (QR login is the most reliable
+  path, since the password path does not support MFA and may require a
+  captcha that cannot be solved from the terminal).
+- Headless: pipe a token into `discordo auth login`. It is validated against
+  `/users/@me` before being stored, and read without echo on a terminal.
+  ```sh
+  printf '%s' "$TOKEN" | discordo auth login
+  ```
 - The token is written to the OS keyring, not to `config.toml`.
 
 2. Verify the session.

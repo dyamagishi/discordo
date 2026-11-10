@@ -7,6 +7,7 @@ exit code. Replace `<...>` placeholders with snowflake IDs from a previous call.
 
 ```sh
 discordo auth status
+printf '%s' "$TOKEN" | discordo auth login   # validate and store a token
 ```
 
 ```json
