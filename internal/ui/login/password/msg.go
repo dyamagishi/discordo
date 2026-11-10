@@ -1,6 +1,7 @@
 package password
 
 import (
+	"bytes"
 	"errors"
 
 	"github.com/ayn2op/arikawa/v3/utils/httputil"
@@ -35,7 +36,7 @@ func submitLogin(login, password string) tview.Cmd {
 
 		loginResp, err := client.Login(login, password)
 		if err != nil {
-			return err
+			return loginError(err)
 		}
 
 		if loginResp.Token != "" {
@@ -48,4 +49,16 @@ func submitLogin(login, password string) tview.Cmd {
 
 		return errors.New("login response did not include a token")
 	})
+}
+
+// loginError turns Discord's captcha rejection into an actionable message.
+// Discord requires hCaptcha for password logins it considers suspicious, and
+// the challenge cannot be solved from the terminal.
+func loginError(err error) error {
+	var httpErr *httputil.HTTPError
+	if errors.As(err, &httpErr) && bytes.Contains(httpErr.Body, []byte("captcha-required")) {
+		return errors.New("Discord requires a captcha for password login; use QR or token login instead")
+	}
+
+	return err
 }
