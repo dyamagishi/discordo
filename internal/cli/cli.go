@@ -96,6 +96,7 @@ Usage:
   discordo -version                 print the version
 
   discordo auth status              show the logged in account
+  discordo auth login               store a token read from stdin
 
   discordo guild list [-limit N]
   discordo guild get <guild-id>
@@ -135,10 +136,16 @@ func newClient() (*api.Client, error) {
 		return nil, err
 	}
 
+	return newClientWithToken(token), nil
+}
+
+// newClientWithToken returns a REST client for token with the same headers as
+// the TUI.
+func newClientWithToken(token string) *api.Client {
 	client := dhttp.NewClient(token)
 	client.OnRequest = append(client.OnRequest, httputil.WithHeaders(dhttp.Headers()))
 
-	return client, nil
+	return client
 }
 
 // newFlagSet returns a flag set that does not print its own errors, since the

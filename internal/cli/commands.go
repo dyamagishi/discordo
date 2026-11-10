@@ -15,6 +15,8 @@ func runAuth(args []string) error {
 	switch args[0] {
 	case "status":
 		return authStatus(args[1:])
+	case "login":
+		return authLogin(args[1:])
 	default:
 		return usagef("auth: unknown subcommand %q", args[0])
 	}
