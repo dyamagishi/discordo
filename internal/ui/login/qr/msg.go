@@ -13,6 +13,7 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/ayn2op/arikawa/v3/utils/httputil"
@@ -32,6 +33,14 @@ const remoteAuthGatewayURL = "wss://remote-auth-gateway.discord.gg/?v=2"
 type gatewayConn struct {
 	ws      *websocket.Conn
 	writeMu sync.Mutex
+	// closed reports whether the connection was closed on purpose, so the
+	// read loop does not surface the resulting close error to the user.
+	closed atomic.Bool
+}
+
+func (c *gatewayConn) close() error {
+	c.closed.Store(true)
+	return c.ws.Close()
 }
 
 func (c *gatewayConn) writeJSON(v any) error {
@@ -51,10 +60,16 @@ func connect() tview.Cmd {
 		headers := http.Headers()
 		headers.Set("User-Agent", http.BrowserUserAgent())
 		dialer := gateway.NewDialer()
-		conn, _, err := dialer.Dial(remoteAuthGatewayURL, headers)
+		conn, resp, err := dialer.Dial(remoteAuthGatewayURL, headers)
 		if err != nil {
+			status := 0
+			if resp != nil {
+				status = resp.StatusCode
+			}
+			slog.Error("failed to connect to the remote auth gateway", "err", err, "status", status)
 			return err
 		}
+		slog.Info("connected to the remote auth gateway")
 		return connCreateMsg{conn: &gatewayConn{ws: conn}}
 	})
 }
@@ -66,7 +81,7 @@ func closeConn(conn *gatewayConn) tview.Cmd {
 		}
 
 		// An error here must not reach the error case, which would close the connection again.
-		if err := conn.ws.Close(); err != nil {
+		if err := conn.close(); err != nil {
 			slog.Error("failed to close remote auth gateway connection", "err", err)
 		}
 
@@ -107,11 +122,12 @@ func listen(conn *gatewayConn) tview.Cmd {
 		}
 
 		_, data, err := conn.ws.ReadMessage()
-		if errors.Is(err, net.ErrClosed) {
+		if conn.closed.Load() || errors.Is(err, net.ErrClosed) {
 			// closeConn closed the connection.
 			return nil
 		}
 		if err != nil {
+			slog.Error("remote auth gateway read failed", "err", err)
 			return err
 		}
 
@@ -132,6 +148,8 @@ func decodeMessage(data []byte) tview.Msg {
 	if err := json.Unmarshal(data, &payload); err != nil {
 		return err
 	}
+
+	slog.Info("remote auth gateway message", "op", payload.Op)
 
 	switch payload.Op {
 	case "hello":
@@ -289,6 +307,7 @@ func exchangeTicket(fingerprint string, privateKey *rsa.PrivateKey, ticket strin
 
 		encryptedToken, err := client.ExchangeRemoteAuthTicket(ticket)
 		if err != nil {
+			slog.Error("failed to exchange the remote auth ticket", "err", err)
 			return err
 		}
 
