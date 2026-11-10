@@ -110,10 +110,9 @@ Usage:
   discordo search <guild-id> [-query TEXT] [-channel ID] [-author ID]
                             [-offset N] [-sort asc|desc]
 
-  discordo thread active <guild-id>
+  discordo thread list <channel-id> [-query NAME] [-archived] [-limit N]
   discordo thread archived <channel-id> [-limit N]
 
-  discordo member list <guild-id> [-limit N]
   discordo member get <guild-id> <user-id>
 
   discordo pin list <channel-id>

@@ -85,8 +85,8 @@ discordo channel list <guild-id>
 discordo msg list <channel-id> -limit 50
 discordo msg get <channel-id> <message-id>
 discordo search <guild-id> -query "deploy failed"
-discordo thread active <guild-id>
-discordo member list <guild-id>
+discordo thread list <channel-id>
+discordo member get <guild-id> <user-id>
 discordo pin list <channel-id>
 discordo dm list
 ```

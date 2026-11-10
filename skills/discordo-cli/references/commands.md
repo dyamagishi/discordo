@@ -49,7 +49,7 @@ discordo msg list <channel-id> -limit 100
 discordo msg list <channel-id> -before <message-id>
 discordo msg list <channel-id> -after <message-id>
 
-# one message
+# one message (fetched through the list endpoint around the id)
 discordo msg get <channel-id> <message-id>
 ```
 
@@ -87,19 +87,27 @@ pages of 25; advance with `-offset`.
 
 ## Threads
 
+Threads are listed per channel. Listing the active threads of a whole guild is a
+bot-only endpoint, so it is not available.
+
 ```sh
-discordo thread active <guild-id>
+discordo thread list <channel-id>
+discordo thread list <channel-id> -query "deploy" -limit 50
+discordo thread list <channel-id> -archived
 discordo thread archived <channel-id> -limit 50
 ```
 
-`thread archived` returns `has_more` so archived threads can be paged.
+`thread list` returns `has_more` and `total_results`; `thread archived` returns
+`has_more`.
 
 ## Members
 
 ```sh
-discordo member list <guild-id> -limit 100
 discordo member get <guild-id> <user-id>
 ```
+
+Listing or searching guild members requires a bot token, so only single-member
+lookups are supported.
 
 ## Pins
 

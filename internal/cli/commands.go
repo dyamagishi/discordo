@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/ayn2op/arikawa/v3/api"
@@ -325,12 +326,20 @@ func msgGet(args []string) error {
 		return err
 	}
 
-	message, err := client.Message(discord.ChannelID(channelID), discord.MessageID(messageID))
+	// GET /channels/{id}/messages/{id} rejects user tokens, so fetch a small
+	// window around the id through the list endpoint instead.
+	messages, err := client.MessagesAround(discord.ChannelID(channelID), discord.MessageID(messageID), 5)
 	if err != nil {
 		return err
 	}
 
-	return writeOK("message", newMessage(*message), -1)
+	for _, message := range messages {
+		if uint64(message.ID) == messageID {
+			return writeOK("message", newMessage(message), -1)
+		}
+	}
+
+	return &exitError{code: exitHTTP, err: fmt.Errorf("message %d not found in channel %d", messageID, channelID)}
 }
 
 func runSearch(args []string) error {
@@ -408,12 +417,12 @@ func runSearch(args []string) error {
 
 func runThread(args []string) error {
 	if len(args) == 0 {
-		return usagef("thread: missing subcommand (active, archived)")
+		return usagef("thread: missing subcommand (list, archived)")
 	}
 
 	switch args[0] {
-	case "active":
-		return threadActive(args[1:])
+	case "list":
+		return threadList(args[1:])
 	case "archived":
 		return threadArchived(args[1:])
 	default:
@@ -421,21 +430,30 @@ func runThread(args []string) error {
 	}
 }
 
-func threadActive(args []string) error {
-	fs := newFlagSet("thread active")
+// threadList searches the threads of one channel. Listing the active threads of
+// a whole guild is a bot-only endpoint, so a channel is required.
+func threadList(args []string) error {
+	fs := newFlagSet("thread list")
+	query := fs.String("query", "", "filter by thread name")
+	archived := fs.Bool("archived", false, "include archived threads")
+	limit := fs.Uint("limit", 25, "maximum number of threads (1-100)")
 	positional, err := parseFlags(fs, args)
 	if err != nil {
 		return err
 	}
 
-	raw, err := requireArgs(fs, positional, "guild-id")
+	raw, err := requireArgs(fs, positional, "channel-id")
 	if err != nil {
 		return err
 	}
 
-	guildID, err := parseSnowflake(raw, "guild-id")
+	channelID, err := parseSnowflake(raw, "channel-id")
 	if err != nil {
 		return err
+	}
+
+	if *limit == 0 || *limit > 100 {
+		return usagef("thread list: -limit must be between 1 and 100")
 	}
 
 	client, err := newClient()
@@ -443,7 +461,12 @@ func threadActive(args []string) error {
 		return err
 	}
 
-	threads, err := client.ActiveThreads(discord.GuildID(guildID))
+	threads, err := client.SearchThreads(discord.ChannelID(channelID), api.SearchThreadsData{
+		Name:     *query,
+		Archived: *archived,
+		Limit:    int(*limit),
+		SortBy:   api.LastMessageTime,
+	})
 	if err != nil {
 		return err
 	}
@@ -453,7 +476,10 @@ func threadActive(args []string) error {
 		out = append(out, newChannel(thread))
 	}
 
-	return writeOK("threads", out, len(out))
+	return writeOKWith("threads", out, len(out), map[string]any{
+		"has_more":      threads.HasMore,
+		"total_results": threads.TotalResults,
+	})
 }
 
 func threadArchived(args []string) error {
@@ -500,53 +526,15 @@ func threadArchived(args []string) error {
 
 func runMember(args []string) error {
 	if len(args) == 0 {
-		return usagef("member: missing subcommand (list, get)")
+		return usagef("member: missing subcommand (get)")
 	}
 
 	switch args[0] {
-	case "list":
-		return memberList(args[1:])
 	case "get":
 		return memberGet(args[1:])
 	default:
 		return usagef("member: unknown subcommand %q", args[0])
 	}
-}
-
-func memberList(args []string) error {
-	fs := newFlagSet("member list")
-	limit := fs.Uint("limit", 100, "maximum number of members")
-	positional, err := parseFlags(fs, args)
-	if err != nil {
-		return err
-	}
-
-	raw, err := requireArgs(fs, positional, "guild-id")
-	if err != nil {
-		return err
-	}
-
-	guildID, err := parseSnowflake(raw, "guild-id")
-	if err != nil {
-		return err
-	}
-
-	client, err := newClient()
-	if err != nil {
-		return err
-	}
-
-	members, err := client.Members(discord.GuildID(guildID), *limit)
-	if err != nil {
-		return err
-	}
-
-	out := make([]memberJSON, 0, len(members))
-	for _, member := range members {
-		out = append(out, newMember(member))
-	}
-
-	return writeOK("members", out, len(out))
 }
 
 func memberGet(args []string) error {

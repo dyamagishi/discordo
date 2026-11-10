@@ -42,7 +42,7 @@ speaks to Discord as the logged-in user account.
 - Recent channel context: `discordo msg list <channel-id> -limit 50`
 - One known message: `discordo msg get <channel-id> <message-id>`
 - Keyword lookup across a guild: `discordo search <guild-id> -query "..."`
-- Follow-ups: `discordo thread active <guild-id>`
+- Follow-ups: `discordo thread list <channel-id>`
 
 3. Page backwards with the returned cursor.
 - `msg list` returns `next_before` when the result hit `-limit`.
@@ -89,6 +89,10 @@ and account status.
 ## Constraints
 
 - Read-only by design. The CLI has no send, edit, delete, or reaction commands.
+- Some endpoints are bot-only and are deliberately absent: listing all guild
+  members, searching members, and fetching the active threads of a whole guild.
+  `member get` works for one known user; threads are listed per channel with
+  `thread list`.
 - Search requires a guild ID: `discordo search <guild-id> -query ...`. There is
   no cross-guild search, because the user search endpoint is guild-scoped.
 - No gateway connection, so no realtime events and no presence data.
