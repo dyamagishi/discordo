@@ -3,6 +3,8 @@ package password
 import (
 	"bytes"
 	"errors"
+	"log/slog"
+	"strings"
 
 	"github.com/ayn2op/arikawa/v3/utils/httputil"
 	"github.com/ayn2op/discordo/internal/http"
@@ -28,6 +30,14 @@ type (
 
 func submitLogin(login, password string) tview.Cmd {
 	return cmd.Task(func() tview.Msg {
+		// Record that the password tab (not QR or token) is what is sending a
+		// login request, without writing the credentials to the log.
+		slog.Info("submitting password login",
+			"login_len", len(login),
+			"login_has_at", strings.Contains(login, "@"),
+			"password_len", len(password),
+		)
+
 		headers := http.Headers()
 		headers.Set("Referer", "https://discord.com/login")
 

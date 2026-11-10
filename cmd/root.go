@@ -45,6 +45,9 @@ func Run() error {
 	}
 	defer logFile.Close() //nolint:errcheck
 
+	exe, _ := os.Executable()
+	slog.Info("starting discordo", "version", buildVersion(), "exe", exe)
+
 	cfg, err := config.Load(*configPath)
 	if err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
