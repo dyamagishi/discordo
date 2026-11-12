@@ -56,12 +56,20 @@ func runCaptured(t *testing.T, args ...string) (string, string, error) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer out.Close()
+	defer func() {
+		if err := out.Close(); err != nil {
+			t.Errorf("close stdout capture: %v", err)
+		}
+	}()
 	errOut, err := os.CreateTemp(t.TempDir(), "stderr")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer errOut.Close()
+	defer func() {
+		if err := errOut.Close(); err != nil {
+			t.Errorf("close stderr capture: %v", err)
+		}
+	}()
 	stdout, stderr := os.Stdout, os.Stderr
 	os.Stdout, os.Stderr = out, errOut
 	defer func() { os.Stdout, os.Stderr = stdout, stderr }()
