@@ -1,0 +1,45 @@
+name: upstream compatibility
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * *'
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upstream-compatibility-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compatibility:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Merge the latest upstream in the disposable checkout
+        run: |
+          git fetch --no-tags https://github.com/ayn2op/discordo.git main:refs/remotes/upstream/main
+          echo "Fork: $(git rev-parse HEAD)"
+          echo "Upstream: $(git rev-parse refs/remotes/upstream/main)"
+          git -c user.name=compatibility-check -c user.email=compatibility-check@localhost merge --no-commit --no-ff refs/remotes/upstream/main
+
+      # Read go.mod after the merge so an upstream Go version bump is tested.
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Test merged source with both HTTP clients
+        run: |
+          go test -race ./...
+          go test -race -tags no_spoof_tls_fingerprint,no_voice,no_syntax_highlighting ./...
+
+      - name: Build merged source
+        run: go build -trimpath -o "$RUNNER_TEMP/discordo" .
