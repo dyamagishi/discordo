@@ -46,7 +46,7 @@ func submitLogin(login, password string) tview.Cmd {
 		loginResp, err := client.Login(login, password)
 		if err != nil {
 			if http.IsCaptchaRequired(err) {
-				return errors.New("Discord requires a captcha for password login; use QR or token login instead")
+				return errors.New("Discord requires a captcha for password login; use QR or token login instead") //nolint:staticcheck // Discord is a proper noun
 			}
 			return err
 		}

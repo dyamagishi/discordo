@@ -308,7 +308,7 @@ func exchangeTicket(fingerprint string, privateKey *rsa.PrivateKey, ticket strin
 		encryptedToken, err := client.ExchangeRemoteAuthTicket(ticket)
 		if err != nil {
 			if http.IsCaptchaRequired(err) {
-				return errors.New("Discord requires a captcha to finish QR login on this network; log in on discord.com in a browser and use the Token tab instead")
+				return errors.New("Discord requires a captcha to finish QR login on this network; log in on discord.com in a browser and use the Token tab instead") //nolint:staticcheck // Discord is a proper noun
 			}
 			slog.Error("failed to exchange the remote auth ticket", "err", err)
 			return err
